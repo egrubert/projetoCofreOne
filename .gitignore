@@ -1,0 +1,25 @@
+# Ignorar diretório node_modules
+node_modules/
+
+# Ignorar arquivos de log
+*.log
+
+# Ignorar arquivos de ambiente
+.env
+.env.local
+
+# Ignorar saídas de build
+dist/
+build/
+
+# Ignorar arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar arquivos específicos de IDE
+.vscode/
+.idea/
+*.iml
+
+# Ignorar uploads
+uploads/
