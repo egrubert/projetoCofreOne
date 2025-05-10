@@ -1,11 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Home</title>
+  <title>Cofre Digital</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Estilo baseado no seu projeto antigo */
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 50px;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      color: #6200ea;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 25px;
+      margin: 15px;
+      background-color: #6200ea;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    
+    .btn:hover {
+      background-color: transparent;
+      border-color: #6200ea;
+      color: #6200ea;
+    }
+    
+    .features {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 40px 0;
+    }
+    
+    .feature-card {
+      background: #1e1e1e;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 10px;
+      width: 200px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body>
-  <h1>Bem-vindo, <%= username %>!</h1>
-  <a href="/logout">Sair</a>
+  <div class="container">
+    <h1>Bem-vindo ao Cofre Digital</h1>
+    <p>Armazene seus arquivos e imagens com segurança</p>
+    
+    <div class="features">
+      <div class="feature-card">
+        <h3>📷 Imagens</h3>
+        <p>Guarde suas fotos privadas</p>
+      </div>
+      
+      <div class="feature-card">
+        <h3>📄 Documentos</h3>
+        <p>PDFs, Word, Excel e mais</p>
+      </div>
+      
+      <div class="feature-card">
+        <h3>🔒 Seguro</h3>
+        <p>Apenas você tem acesso</p>
+      </div>
+    </div>
+    
+    <% if (!loggedIn) { %>
+      <div>
+        <p>Bem-vindo, Seja um novo cliente!</p>
+        <a href="/login" class="btn">Entrar</a>
+        <a href="/cadastro" class="btn">Cadastrar</a>
+      </div>
+    <% } else { %>
+      <div>
+        <p>Bem-vindo, <%= username %>!</p>
+        <a href="/upload" class="btn">Enviar Imagem</a>
+        <a href="/upload-file" class="btn">Enviar Arquivo</a>
+        <a href="/gallery" class="btn">Minhas Imagens</a>
+        <a href="/files" class="btn">Meus Arquivos</a>
+        <a href="/logout" class="btn">Sair</a>
+      </div>
+    <% } %>
+  </div>
 </body>
 </html>

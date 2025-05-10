@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minhas Imagens</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .image {
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 200px;
+    }
+    .image img {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Minhas Imagens</h1>
+  <div class="gallery">
+    <% if (images.length > 0) { %>
+      <% images.forEach((img) => { %>
+        <div class="image">
+          <img src="/<%= img.image_path %>" alt="<%= img.image_name %>">
+          <p>Enviado em: <%= img.uploaded_at.toLocaleString() %></p>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <p>Você ainda não enviou imagens.</p>
+    <% } %>
+  </div>
+  <a href="/upload">Enviar nova imagem</a>
+  <a href="/logout">Sair</a>
+</body>
+</html>
