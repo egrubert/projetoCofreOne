@@ -22,6 +22,8 @@ db.connect((err) => {
 });
 
 // Middlewares
+
+app.use(bodyParser.json()); // Para parsear application/json
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
@@ -479,6 +481,62 @@ app.get('/editor', isLoggedIn, (req, res) => {
 
 // Rota para salvar documentos (integrado com seu sistema atual)
 app.post('/save-document', isLoggedIn, (req, res) => {
+  try {
+    const { title, content, documentId } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Título e conteúdo são obrigatórios' 
+      });
+    }
+
+    if (documentId) {
+      // Atualizar documento existente
+      db.query(
+        'UPDATE user_documents SET title = ?, content = ?, updated_at = NOW() WHERE id = ? AND user_id = ?',
+        [title, content, documentId, req.session.userId],
+        (err) => {
+          if (err) {
+            console.error('Erro ao atualizar:', err);
+            return res.status(500).json({ 
+              success: false, 
+              error: 'Erro ao atualizar documento' 
+            });
+          }
+          res.json({ success: true });
+        }
+      );
+    } else {
+      // Criar novo documento
+      db.query(
+        'INSERT INTO user_documents (user_id, title, content) VALUES (?, ?, ?)',
+        [req.session.userId, title, content],
+        (err, result) => {
+          if (err) {
+            console.error('Erro ao criar:', err);
+            return res.status(500).json({ 
+              success: false, 
+              error: 'Erro ao criar documento' 
+            });
+          }
+          res.json({ 
+            success: true,
+            documentId: result.insertId 
+          });
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Erro no servidor:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro interno no servidor' 
+    });
+  }
+});
+/*
+app.post('/save-document', isLoggedIn, (req, res) => {
   const { title, content, documentId } = req.body;
 
   // Validação reforçada
@@ -533,7 +591,8 @@ app.post('/save-document', isLoggedIn, (req, res) => {
     );
   }
 });
-
+*/
+ 
 // Rota para listagem de documentos (com paginação opcional)
 app.get('/documents', isLoggedIn, (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
