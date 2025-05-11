@@ -276,48 +276,6 @@ app.post('/edit-image/:id', upload.single('image'), (req, res) => {
   );
 });
 
-// Rota para exibir o formulário de edição de imagem
-app.get('/edit-image/:id', (req, res) => {
-  if (!req.session.loggedin) {
-    return res.redirect('/login');
-  }
-  const imageId = req.params.id;
-  // Busca a imagem no banco de dados
-  db.query(
-    'SELECT * FROM user_images WHERE id = ?',
-    [imageId],
-    (err, results) => {
-      if (err) throw err;
-      if (results.length > 0) {
-        res.render('edit-image', { image: results[0] });
-      } else {
-        res.send('Imagem não encontrada!');
-      }
-    }
-  );
-});
-
-// Rota para atualizar a imagem
-app.post('/edit-image/:id', upload.single('image'), (req, res) => {
-  if (!req.session.loggedin) {
-    return res.redirect('/login');
-  }
-
-  const imageId = req.params.id;
-  const newImageName = req.file.filename;
-  const newImagePath = `uploads/user_${req.session.userId}/${newImageName}`;
-
-  // Atualiza o registro no banco de dados
-  db.query(
-    'UPDATE user_images SET image_name = ?, image_path = ? WHERE id = ?',
-    [newImageName, newImagePath, imageId],
-    (err) => {
-      if (err) throw err;
-      res.redirect('/gallery');
-    }
-  );
-});
-
 // Rota para deletar uma imagem
 app.post('/delete-image', (req, res) => {
   if (!req.session.loggedin) {
@@ -455,7 +413,7 @@ app.get('/files', (req, res) => {
 });
 
 //Rota para download 
-app.get('/download/:id', (req, res) => {
+app.get('/download-file/:id', (req, res) => {
   if (!req.session.loggedin) {
     return res.redirect('/login');
   }
@@ -482,6 +440,213 @@ app.get('/download/:id', (req, res) => {
 });
 
 //-----------------------------FIM Formulario de upload de arquivos-------------------
+//-----------------------------INICIO Sistema de Editor de Documentos-------------------
+
+// Rota para exibir o editor (usando seu middleware existente)
+app.get('/editor', isLoggedIn, (req, res) => {
+  const documentId = req.query.id;
+
+  if (documentId) {
+    // Edição de documento existente com tratamento robusto
+    db.query(
+      'SELECT id, title, content FROM user_documents WHERE id = ? AND user_id = ?',
+      [documentId, req.session.userId],
+      (err, results) => {
+        if (err) {
+          console.error('Erro no banco de dados:', err);
+          return res.status(500).render('error', { 
+            message: 'Erro ao carregar documento',
+            layout: 'layout' 
+          });
+        }
+        
+        res.render('editor', {
+          document: results[0] || null,
+          mode: 'edit',
+          layout: 'layout'
+        });
+      }
+    );
+  } else {
+    // Novo documento
+    res.render('editor', {
+      document: null,
+      mode: 'new',
+      layout: 'layout'
+    });
+  }
+});
+
+// Rota para salvar documentos (integrado com seu sistema atual)
+app.post('/save-document', isLoggedIn, (req, res) => {
+  const { title, content, documentId } = req.body;
+
+  // Validação reforçada
+  if (!title || title.trim() === '' || !content || content.trim() === '') {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Título e conteúdo são obrigatórios' 
+    });
+  }
+
+  const sanitizedTitle = title.substring(0, 255); // Previne SQL Injection e truncamento
+
+  if (documentId) {
+    // Atualização segura
+    db.query(
+      'UPDATE user_documents SET title = ?, content = ? WHERE id = ? AND user_id = ?',
+      [sanitizedTitle, content, documentId, req.session.userId],
+      (err) => {
+        if (err) {
+          console.error('Erro na atualização:', err);
+          return res.status(500).json({ 
+            success: false,
+            error: 'Erro ao atualizar documento' 
+          });
+        }
+        res.json({ 
+          success: true,
+          documentId,
+          action: 'updated'
+        });
+      }
+    );
+  } else {
+    // Criação com tratamento de erro
+    db.query(
+      'INSERT INTO user_documents (user_id, title, content) VALUES (?, ?, ?)',
+      [req.session.userId, sanitizedTitle, content],
+      (err, result) => {
+        if (err) {
+          console.error('Erro na criação:', err);
+          return res.status(500).json({ 
+            success: false,
+            error: 'Erro ao criar documento' 
+          });
+        }
+        res.json({ 
+          success: true,
+          documentId: result.insertId,
+          action: 'created'
+        });
+      }
+    );
+  }
+});
+
+// Rota para listagem de documentos (com paginação opcional)
+app.get('/documents', isLoggedIn, (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  db.query(
+    `SELECT id, title, 
+     DATE_FORMAT(created_at, '%d/%m/%Y %H:%i') as created_at,
+     DATE_FORMAT(updated_at, '%d/%m/%Y %H:%i') as updated_at
+     FROM user_documents 
+     WHERE user_id = ? 
+     ORDER BY updated_at DESC 
+     LIMIT ? OFFSET ?`,
+    [req.session.userId, limit, offset],
+    (err, documents) => {
+      if (err) {
+        console.error('Erro na consulta:', err);
+        return res.status(500).render('error', {
+          message: 'Erro ao carregar documentos',
+          layout: 'layout'
+        });
+      }
+
+      // Contagem total para paginação
+      db.query(
+        'SELECT COUNT(*) as total FROM user_documents WHERE user_id = ?',
+        [req.session.userId],
+        (err, count) => {
+          if (err) {
+            console.error('Erro na contagem:', err);
+            return res.status(500).render('error', {
+              message: 'Erro ao carregar documentos',
+              layout: 'layout'
+            });
+          }
+
+          res.render('documents', {
+            documents,
+            currentPage: page,
+            totalPages: Math.ceil(count[0].total / limit),
+            layout: 'layout'
+          });
+        }
+      );
+    }
+  );
+});
+
+// Rota para deletar documento (com verificação de propriedade)
+app.post('/delete-document', isLoggedIn, (req, res) => {
+  const { documentId } = req.body;
+
+  if (!documentId) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'ID do documento é obrigatório' 
+    });
+  }
+
+  db.query(
+    'DELETE FROM user_documents WHERE id = ? AND user_id = ?',
+    [documentId, req.session.userId],
+    (err, result) => {
+      if (err) {
+        console.error('Erro ao deletar:', err);
+        return res.status(500).json({ 
+          success: false,
+          error: 'Erro ao deletar documento' 
+        });
+      }
+
+      res.json({ 
+        success: result.affectedRows > 0,
+        message: result.affectedRows > 0 
+          ? 'Documento deletado com sucesso' 
+          : 'Documento não encontrado'
+      });
+    }
+  );
+});
+
+// Rota para download/exportação (segura)
+app.get('/download-document/:id', isLoggedIn, (req, res) => {
+  const documentId = req.params.id;
+
+  db.query(
+    'SELECT title, content FROM user_documents WHERE id = ? AND user_id = ?',
+    [documentId, req.session.userId],
+    (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(404).render('error', {
+          message: 'Documento não encontrado',
+          layout: 'layout'
+        });
+      }
+
+      const document = results[0];
+      const filename = `${document.title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(document.content);
+    }
+  );
+});
+
+//-----------------------------FIM Sistema de Editor de Documentos-------------------
+
+//-----------------------------INICIO Formulario de editor de arquivos-------------------
+
+
+//-----------------------------FIM Formulario de editor de arquivos-------------------
 
 // ---------------------------criar middleware para verificar se o usuário está logado -------------------------
 function isLoggedIn(req, res, next) {

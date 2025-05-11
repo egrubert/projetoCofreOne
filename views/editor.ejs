@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Editor de Texto Seguro</title>
+  <script src="https://cdn.tiny.cloud/1/SUA_API_KEY/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .editor-container { margin: 20px; }
+    #document-title { 
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="editor-container">
+    <input type="text" id="document-title" placeholder="Nome do Documento" value="<%= document ? document.title : '' %>">
+    <textarea id="editor"><%= document ? document.content : '' %></textarea>
+    <button id="save-btn">Salvar</button>
+    <a href="/documents" class="btn">Voltar</a>
+  </div>
+
+  <script>
+    tinymce.init({
+      selector: '#editor',
+      plugins: 'lists link image table code',
+      toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist | link image',
+      height: 500
+    });
+
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const title = document.getElementById('document-title').value;
+      const content = tinymce.get('editor').getContent();
+      
+      fetch('/save-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title, 
+          content,
+          documentId: '<%= document ? document.id : "" %>' 
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Documento salvo!');
+          window.location.href = '/documents';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
