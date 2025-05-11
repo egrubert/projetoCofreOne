@@ -130,30 +130,40 @@ const storage = multer.diskStorage({
     cb(null, uniqueName);
   }
 });
+
 // Filtro para permitir apenas certos tipos de arquivo
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
-    'application/pdf', // PDF
-    'application/msword', // DOC
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
-    'application/vnd.ms-excel', // XLS
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // XLSX
-    'text/plain', // TXT   
+    // Formatos de imagem
+    'image/png', // PNG
+    'image/jpeg', // JPG/JPEG
+    'image/gif', // GIF
+    'image/webp', // WEBP
+    'image/svg+xml', // SVG
+
+    // Documentos (mantenha os existentes)
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
     
-    // Novos formatos (LibreOffice + CSV)
-    'application/vnd.oasis.opendocument.text', // ODT
-    'application/vnd.oasis.opendocument.spreadsheet', // ODS
-    'application/vnd.oasis.opendocument.presentation', // ODP
-    'text/csv', // CSV
-    'application/csv' // CSV alternativo
+    // LibreOffice + CSV
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.oasis.opendocument.spreadsheet',
+    'application/vnd.oasis.opendocument.presentation',
+    'text/csv',
+    'application/csv'
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true); // Aceita o arquivo
+    cb(null, true);
   } else {
-    cb(new Error('Tipo de arquivo não permitido!'), false);
+    cb(new Error('Tipo de arquivo não permitido! Apenas são aceitos: PNG, JPG, GIF, WEBP, SVG, PDF, DOC, DOCX, XLS, XLSX, TXT, ODT, ODS, ODP, CSV'), false);
   }
 };
+
 // rotas para exibir o formulário de upload
 //const upload = multer({ storage: storage });
 const upload = multer({ 
@@ -166,6 +176,8 @@ const upload = multer({
 
 //-----------------------------INICIO Formulario de upload de imagens-------------------
 
+
+//-----------------------------FIM Formulario de upload de imagens-------------------
 app.get('/upload', (req, res) => {
   if (!req.session.loggedin) {
     return res.redirect('/login');
@@ -445,7 +457,47 @@ app.get('/download-file/:id', (req, res) => {
 //-----------------------------INICIO Sistema de Editor de Documentos-------------------
 
 // Rota para exibir o editor (usando seu middleware existente)
-app.get('/editor', isLoggedIn, (req, res) => {
+
+app.get(['/editor', '/editor/:id'], isLoggedIn, (req, res) => {
+  const documentId = req.params.id || req.query.id;
+
+  if (documentId) {
+    db.query(
+      'SELECT id, title, content FROM user_documents WHERE id = ? AND user_id = ?',
+      [documentId, req.session.userId],
+      (err, results) => {
+        if (err) {
+          console.error('Erro no banco:', err);
+          return res.status(500).send('Erro interno');
+        }
+
+        if (results.length === 0) {
+          // Documento não encontrado: cria um novo
+          return res.render('editor', { 
+            document: null,
+            mode: 'new',
+            layout: 'layout'
+          });
+        }
+
+        // Documento encontrado
+        res.render('editor', {
+          document: results[0],
+          mode: 'edit',
+          layout: 'layout'
+        });
+      }
+    );
+  } else {
+    // Novo documento
+    res.render('editor', {
+      document: null,
+      mode: 'new',
+      layout: 'layout'
+    });
+  }
+});
+/*app.get('/editor', isLoggedIn, (req, res) => {
   const documentId = req.query.id;
 
   if (documentId) {
@@ -478,6 +530,7 @@ app.get('/editor', isLoggedIn, (req, res) => {
     });
   }
 });
+/*
 
 // Rota para salvar documentos (integrado com seu sistema atual)
 app.post('/save-document', isLoggedIn, (req, res) => {
