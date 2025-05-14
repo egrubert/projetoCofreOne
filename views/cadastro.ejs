@@ -1,17 +1,311 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Cadastro</title>
-  <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro Futurista | Cofre Digital</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap">
+    <style>
+        :root {
+            --primary: #00f7ff;
+            --secondary: #6200ea;
+            --dark: #0a0a1a;
+            --light: #e0e0ff;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 247, 255, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(98, 0, 234, 0.1) 0%, transparent 30%);
+        }
+
+        .signup-container {
+            position: relative;
+            width: 380px;
+            padding: 40px;
+            background: rgba(10, 10, 26, 0.8);
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 247, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 247, 255, 0.2);
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .signup-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                transparent 45%,
+                var(--primary) 50%,
+                transparent 55%
+            );
+            animation: rotate 8s linear infinite;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(20, 20, 40, 0.7);
+            border: 1px solid rgba(0, 247, 255, 0.3);
+            border-radius: 8px;
+            color: var(--light);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+        }
+
+        label {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            color: rgba(224, 224, 255, 0.7);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        input:focus + label,
+        input:not(:placeholder-shown) + label {
+            top: -10px;
+            left: 10px;
+            font-size: 0.8rem;
+            background: var(--dark);
+            padding: 0 5px;
+            color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            box-shadow: 0 0 15px rgba(98, 0, 234, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.7);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: rgba(224, 224, 255, 0.7);
+        }
+
+        .login-link a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .login-link a:hover {
+            text-shadow: 0 0 5px rgba(0, 247, 255, 0.5);
+        }
+
+        /* Efeitos futuristas adicionais */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(0, 247, 255, 0.5);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            to { transform: translateY(-100vh) rotate(45deg); }
+        }
+
+        /* Indicador de força da senha */
+        .password-strength {
+            height: 4px;
+            background: rgba(224, 224, 255, 0.2);
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #ff3860;
+            transition: width 0.3s, background 0.3s;
+        }
+    </style>
 </head>
 <body>
-  <form action="/auth/cadastro" method="POST">
-    <h1>Cadastro</h1>
-    <input type="text" name="username" placeholder="Usuário" required>
-    <input type="email" name="email" placeholder="E-mail" required>
-    <input type="password" name="password" placeholder="Senha" required>
-    <button type="submit">Cadastrar</button>
-    <p>Já tem conta? <a href="/login">Faça login</a></p>
-  </form>
+    <div class="particles" id="particles"></div>
+    
+    <div class="signup-container">
+        <h1>CRIAR CONTA</h1>
+        <form action="/auth/cadastro" method="POST">
+            <div class="input-group">
+                <input type="text" name="username" id="username" placeholder=" " required>
+                <label for="username">USUÁRIO</label>
+            </div>
+            
+            <div class="input-group">
+                <input type="email" name="email" id="email" placeholder=" " required>
+                <label for="email">E-MAIL</label>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" name="password" id="password" placeholder=" " required>
+                <label for="password">SENHA</label>
+                <div class="password-strength">
+                    <div class="strength-bar" id="strength-bar"></div>
+                </div>
+            </div>
+            
+            <button type="submit">CRIAR CONTA</button>
+        </form>
+        
+        <div class="login-link">
+            <p>JÁ TEM UMA CONTA? <a href="/login">ACESSE O SISTEMA</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Cria partículas flutuantes
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 2 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                const duration = Math.random() * 20 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                particle.style.animationDelay = `${Math.random() * 10}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Efeito de digitação no título
+        function typeWriter() {
+            const title = document.querySelector('h1');
+            const text = "CRIAR CONTA";
+            let i = 0;
+            
+            title.textContent = '';
+            
+            function type() {
+                if (i < text.length) {
+                    title.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, 100);
+                }
+            }
+            
+            type();
+        }
+        
+        // Verificador de força da senha
+        function setupPasswordStrength() {
+            const passwordInput = document.getElementById('password');
+            const strengthBar = document.getElementById('strength-bar');
+            
+            passwordInput.addEventListener('input', () => {
+                const password = passwordInput.value;
+                let strength = 0;
+                
+                // Verifica o comprimento
+                if (password.length > 0) strength += 20;
+                if (password.length >= 8) strength += 20;
+                
+                // Verifica caracteres diversos
+                if (/[A-Z]/.test(password)) strength += 20;
+                if (/[0-9]/.test(password)) strength += 20;
+                if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+                
+                // Atualiza a barra
+                strengthBar.style.width = `${strength}%`;
+                
+                // Muda a cor baseada na força
+                if (strength < 40) {
+                    strengthBar.style.background = '#ff3860'; // Vermelho
+                } else if (strength < 80) {
+                    strengthBar.style.background = '#ffdd57'; // Amarelo
+                } else {
+                    strengthBar.style.background = '#00d1b2'; // Verde
+                }
+            });
+        }
+        
+        // Inicia os efeitos quando a página carrega
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            typeWriter();
+            setupPasswordStrength();
+        });
+    </script>
 </body>
 </html>

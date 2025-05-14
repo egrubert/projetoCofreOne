@@ -26,6 +26,7 @@ db.connect((err) => {
 app.use(bodyParser.json()); // Para parsear application/json
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -207,7 +208,39 @@ app.post('/upload', upload.single('image'), (req, res) => {
 });
 
 // Rota para exibir a galeria de imagens
-app.get('/gallery', (req, res) => {
+app.get('/gallery', isLoggedIn, (req, res) => {
+  const userId = req.session.userId;
+
+  // Busca imagens do usuário + imagens compartilhadas com ele
+  db.query(
+    `(SELECT ui.*, 'owner' as access_type FROM user_images ui WHERE ui.user_id = ?)
+     UNION
+     (SELECT ui.*, 'shared' as access_type FROM user_images ui
+      JOIN shared_images si ON ui.id = si.image_id
+      WHERE si.shared_with_id = ?)`,
+    [userId, userId],
+    (err, images) => {
+      if (err) {
+        console.error('Erro ao buscar imagens:', err);
+        return res.status(500).send('Erro interno');
+      }
+
+      // Busca usuários disponíveis para compartilhamento
+      db.query(
+        'SELECT id, username FROM users WHERE id != ?',
+        [userId],
+        (err, availableUsers) => {
+          res.render('gallery', {
+            images,
+            availableUsers: availableUsers || [],
+            userId
+          });
+        }
+      );
+    }
+  );
+});
+/*app.get('/gallery', (req, res) => {
   if (!req.session.loggedin) {
     return res.redirect('/login');
   }
@@ -223,30 +256,27 @@ app.get('/gallery', (req, res) => {
       res.render('gallery', { images: results });
     }
   );
-});
+});*/
 
 // Rota para exibir uma imagem
-app.get('/image/:id', (req, res) => {
-  if (!req.session.loggedin) {
-    return res.redirect('/login');
-  }
-
+app.get('/image/:id', isLoggedIn, (req, res) => {
   const imageId = req.params.id;
+  const userId = req.session.userId;
 
-  // Busca a imagem no banco de dados
   db.query(
-    'SELECT * FROM user_images WHERE id = ?',
-    [imageId],
+    `SELECT ui.* FROM user_images ui
+     LEFT JOIN shared_images si ON ui.id = si.image_id
+     WHERE ui.id = ? AND (ui.user_id = ? OR si.shared_with_id = ?)`,
+    [imageId, userId, userId],
     (err, results) => {
-      if (err) throw err;
-      if (results.length > 0) {
-        res.render('image', { image: results[0] });
-      } else {
-        res.send('Imagem não encontrada!');
+      if (err || results.length === 0) {
+        return res.status(403).send('Acesso não autorizado');
       }
+      res.render('image', { image: results[0] });
     }
   );
 });
+
 
 // Rota para exibir o formulário de edição de imagem
 app.get('/edit-image/:id', (req, res) => {
@@ -454,6 +484,7 @@ app.get('/download-file/:id', (req, res) => {
 });
 
 //-----------------------------FIM Formulario de upload de arquivos-------------------
+
 //-----------------------------INICIO Sistema de Editor de Documentos-------------------
 
 // Rota para exibir o editor (usando seu middleware existente)
@@ -530,7 +561,7 @@ app.get(['/editor', '/editor/:id'], isLoggedIn, (req, res) => {
     });
   }
 });
-/*
+*/
 
 // Rota para salvar documentos (integrado com seu sistema atual)
 app.post('/save-document', isLoggedIn, (req, res) => {
@@ -755,10 +786,123 @@ app.get('/download-document/:id', isLoggedIn, (req, res) => {
 
 //-----------------------------FIM Sistema de Editor de Documentos-------------------
 
-//-----------------------------INICIO Formulario de editor de arquivos-------------------
+
+//-----------------------------INICIO Formulario de compartlhamento-------------------
+
+//Compartilhar Imagem (POST)
+app.post('/share-image', isLoggedIn, (req, res) => {
+  const { imageId, userIdToShare, permission } = req.body;
+  const ownerId = req.session.userId;
+
+  // Validações
+  if (!imageId || !userIdToShare) {
+    return res.status(400).json({ error: 'Dados incompletos' });
+  }
+
+  if (ownerId == userIdToShare) {
+    return res.status(400).json({ error: 'Não pode compartilhar consigo mesmo' });
+  }
+
+  db.query(
+    `INSERT INTO shared_images 
+     (image_id, owner_id, shared_with_id, can_edit) 
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE can_edit = VALUES(can_edit)`,
+    [imageId, ownerId, userIdToShare, permission === 'edit'],
+    (err) => {
+      if (err) {
+        console.error('Erro ao compartilhar:', err);
+        return res.status(500).json({ error: 'Erro no servidor' });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+/*app.post('/share-image', isLoggedIn, (req, res) => {
+  const { imageId, userIdToShare, canEdit } = req.body;
+  const ownerId = req.session.userId;
+
+  // Verifica se o usuário logado é dono da imagem
+  db.query(
+    'SELECT * FROM user_images WHERE id = ? AND user_id = ?',
+    [imageId, ownerId],
+    (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(403).json({ error: 'Você não tem permissão para compartilhar esta imagem.' });
+      }
+
+      // Insere o compartilhamento
+      db.query(
+        'INSERT INTO shared_images (image_id, owner_id, shared_with_id, can_edit) VALUES (?, ?, ?, ?)',
+        [imageId, ownerId, userIdToShare, canEdit || false],
+        (err) => {
+          if (err) return res.status(500).json({ error: 'Erro ao compartilhar imagem.' });
+          res.json({ success: true });
+        }
+      );
+    }
+  );
+});*/
+
+//Listar Imagens Compartilhadas (GET)
+app.get('/shared-images', isLoggedIn, (req, res) => {
+  const userId = req.session.userId;
+
+  // Imagens compartilhadas COM o usuário logado
+  db.query(
+    `SELECT ui.*, u.username as owner_name 
+     FROM user_images ui
+     JOIN shared_images si ON ui.id = si.image_id
+     JOIN users u ON si.owner_id = u.id
+     WHERE si.shared_with_id = ?`,
+    [userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: 'Erro ao carregar imagens.' });
+      res.json(results);
+    }
+  );
+});
+
+//Adiciona uma rota para gerenciar compartilhamentos:
+app.get('/image-shares/:imageId', isLoggedIn, (req, res) => {
+  const { imageId } = req.params;
+  const userId = req.session.userId;
+
+  db.query(
+    `SELECT u.username, si.shared_with_id, si.can_edit, si.created_at
+     FROM shared_images si
+     JOIN users u ON si.shared_with_id = u.id
+     WHERE si.image_id = ? AND si.owner_id = ?`,
+    [imageId, userId],
+    (err, shares) => {
+      if (err) return res.status(500).json({ error: 'Erro ao buscar compartilhamentos' });
+      res.json(shares);
+    }
+  );
+});
+
+//Rota para revogar compartilhamento:
+app.post('/revoke-share', isLoggedIn, (req, res) => {
+  const { imageId, userIdToRevoke } = req.body;
+  const ownerId = req.session.userId;
+
+  db.query(
+    'DELETE FROM shared_images WHERE image_id = ? AND owner_id = ? AND shared_with_id = ?',
+    [imageId, ownerId, userIdToRevoke],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: 'Erro ao revogar' });
+      res.json({ success: result.affectedRows > 0 });
+    }
+  );
+});
+
+//-----------------------------FIM Formulario de compartilhamento -------------------
+
+//-----------------------------INICIO Formulario de -------------------
 
 
-//-----------------------------FIM Formulario de editor de arquivos-------------------
+//-----------------------------FIM Formulario de    -------------------
 
 // ---------------------------criar middleware para verificar se o usuário está logado -------------------------
 function isLoggedIn(req, res, next) {

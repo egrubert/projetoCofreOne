@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <form action="/auth/login" method="POST">
+    <h1>Login</h1>
+    <input type="text" name="username" placeholder="Usuário" required>
+    <input type="password" name="password" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+    <p>Não tem conta? <a href="/cadastro">Cadastre-se</a></p>
+  </form>
+</body>
+</html>

@@ -4,94 +4,262 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cofre Digital</title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
-        .feature-buttons {
-            display: flex;
-            gap: 15px;
-            margin: 30px 0;
-            justify-content: center;
-            flex-wrap: wrap;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+            background: url('/images/home.jpg') no-repeat center center;
         }
-        .feature-btn {
-            padding: 12px 25px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
+        .navbar {
             display: flex;
+            background-color: #3d4659;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            padding: 1rem 2rem;         
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        .btn-primary {
-            background-color: #6200ea;
-            color: white;
-            border: 2px solid #6200ea;
-        }
-        .btn-primary:hover {
-            background-color: transparent;
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
             color: #6200ea;
         }
-        .btn-secondary {
-            background-color: #03dac6;
-            color: #000;
-            border: 2px solid #03dac6;
+        .navbar .nav-links {
+            display: flex;
+            gap: 1.5rem;
         }
-        .btn-secondary:hover {
-            background-color: transparent;
-            color: #03dac6;
+        .navbar .nav-links a {
+            text-decoration: none;
+            font-size: xx-large;
+            color: #7c94aa;
+            font-weight: 500;
+            transition: color 0.3s;
         }
-        .icon {
-            font-size: 1.2em;
+        .navbar .nav-links a:hover {
+            color: #6200ea;
         }
+        .cta-button {
+            background-color: #6200ea;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .hero {
+            position: relative;
+            height: 70vh;
+            
+            background-size: cover;
+            display: flex;
+            align-items: center;
+        }
+        
+        .hero-content {
+            display: flex;
+            width: 100%;
+            height: 60%;
+        }
+        
+        /* Quadrantes laterais */
+        .left-quarter, .right-quarter {
+            width: 25%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .middle-half {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Partes verticais (1/3) */
+        .text-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            text-align: center;
+            padding: 20px;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+        
+        .left-quarter .text-section {
+            background-color: rgba(98, 0, 234, 0.7); /* Roxo semi-transparente */
+        }
+        
+        .right-quarter .text-section {
+            background-color: rgba(3, 218, 198, 0.7); /* Ciano semi-transparente */
+        }
+        
+        .main-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        /* Animações */
+        @keyframes textRotateLeft {
+            0%, 20% { opacity: 1; }
+            33%, 100% { opacity: 0; }
+        }
+        
+        @keyframes textRotateRight {
+            0%, 20% { opacity: 0; }
+            33%, 53% { opacity: 1; }
+            66%, 100% { opacity: 0; }
+        }
+        
+        .left-quarter .text-section:nth-child(1) {
+            animation: textRotateLeft 9s infinite;
+        }
+        
+        .left-quarter .text-section:nth-child(2) {
+            animation: textRotateLeft 9s infinite 3s;
+        }
+        
+        .left-quarter .text-section:nth-child(3) {
+            animation: textRotateLeft 9s infinite 6s;
+        }
+        
+        .right-quarter .text-section:nth-child(1) {
+            animation: textRotateRight 9s infinite;
+        }
+        
+        .right-quarter .text-section:nth-child(2) {
+            animation: textRotateRight 9s infinite 3s;
+        }
+        
+        .right-quarter .text-section:nth-child(3) {
+            animation: textRotateRight 9s infinite 6s;
+        }
+
+        .features {
+            background-color: #3d4659;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem 1rem;
+        }
+
+        .feature-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: -20px -18px 15px 0px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <% if (loggedIn) { %>
-            <h1>Bem-vindo, <span class="username"><%= username %></span>!</h1>
-            
-            <div class="feature-buttons">
-                <!-- Botão para Novo Documento -->
-                <a href="/editor" class="feature-btn btn-primary">
-                    <span class="icon">📄</span>
-                    Novo Documento
-                </a>
-                
-                <!-- Botão para Meus Documentos -->
-                <a href="/documents" class="feature-btn btn-secondary">
-                    <span class="icon">📂</span>
-                    Meus Documentos
-                </a>
-                
-                <!-- Botão para Upload de Arquivos -->
-                <a href="/upload-file" class="feature-btn btn-primary">
-                    <span class="icon">📤</span>
-                    Enviar Arquivo
-                </a>
-                
-                <!-- Botão para Galeria de Imagens -->
-                <a href="/gallery" class="feature-btn btn-secondary">
-                    <span class="icon">🖼️</span>
-                    Minhas Imagens
-                </a>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">CofreDigital</div>
+        <div class="nav-links">
+            <a href="/login">Login</a>
+            <a href="/cadastro">Cadastro</a>
+        </div>
+    </nav>
+
+     <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <!-- 1/4 esquerdo dividido em 3 partes verticais -->
+            <div class="left-quarter">
+                <div class="text-section">
+                    <div>
+                        <h3>Segurança</h3>
+                        <p>Proteção militar com criptografia AES-256</p>
+                    </div>
+                </div>
+                <div class="text-section">
+                    <div>
+                        <h3>Privacidade</h3>
+                        <p>Seus dados ficam apenas com você</p>
+                    </div>
+                </div>
+                <div class="text-section">
+                    <div>
+                        <h3>Acesso Fácil</h3>
+                        <p>Disponível em qualquer dispositivo</p>
+                    </div>
+                </div>
             </div>
             
-            <!-- Seção de Documentos Recentes (opcional) -->
-            <h2>Seus Documentos Recentes</h2>
-            <div class="recent-documents">
-                <!-- Aqui você pode adicionar uma listagem dinâmica -->
-                <p>📝 <a href="/documents">Visualize todos os documentos</a></p>
+            <!-- 2/4 central (conteúdo principal) -->
+            <div class="middle-half">
+                <div class="main-content">
+                    <h1>Cofre Digital</h1>
+                    <p>Sua solução completa para armazenamento seguro</p>
+                    <a href="/cadastro" style="
+                        display: inline-block;
+                        padding: 12px 30px;
+                        background: #6200ea;
+                        color: white;
+                        border-radius: 50px;
+                        text-decoration: none;
+                        margin-top: 20px;
+                    ">Comece Agora</a>
+                </div>
             </div>
             
-        <% } else { %>
-            <h1>Cofre Digital</h1>
-            <p>Armazene seus documentos e imagens com segurança</p>
-            <div class="auth-buttons">
-                <a href="/login" class="btn">Entrar</a>
-                <a href="/cadastro" class="btn">Cadastrar</a>
+            <!-- 1/4 direito dividido em 3 partes verticais -->
+            <div class="right-quarter">
+                <div class="text-section">
+                    <div>
+                        <h3>Ana S.</h3>
+                        <p>"Protege meus documentos pessoais com eficiência"</p>
+                    </div>
+                </div>
+                <div class="text-section">
+                    <div>
+                        <h3>Carlos M.</h3>
+                        <p>"A melhor opção para meus arquivos profissionais"</p>
+                    </div>
+                </div>
+                <div class="text-section">
+                    <div>
+                        <h3>Empresa X</h3>
+                        <p>"Solução corporativa confiável e segura"</p>
+                    </div>
+                </div>
             </div>
-        <% } %>
+        </div>
     </div>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="feature-card">
+            <h3>📁 Documentos</h3>
+            <p>Armazene e organize seus arquivos importantes</p>
+        </div>
+        <div class="feature-card">
+            <h3>🖼️ Imagens</h3>
+            <p>Guarde suas fotos com privacidade</p>
+        </div>
+        <div class="feature-card">
+            <h3>🔒 Segurança</h3>
+            <p>Criptografia AES-256 para sua tranquilidade</p>
+        </div>
+    </section>
+
+
 </body>
 </html>
